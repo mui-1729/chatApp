@@ -1,103 +1,220 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+
+type Message = {
+  id: string;
+  text: string;
+  created_at: string;
+};
+
+// タブの種類を定義
+type Tab = "ai" | "external" | "community";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  // 新しくタブの状態管理を追加
+  const [activeTab, setActiveTab] = useState<Tab>("ai"); // デフォルトはAI回答タブ
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  // メッセージ一覧を取得
+  useEffect(() => {
+    // AIタブが選択されている時のみメッセージを取得する
+    // 将来的にはタブに応じて異なるデータを取得するように変更します
+    if (activeTab === "ai") {
+      const fetchMessages = async () => {
+        const { data, error } = await supabase
+          .from("messages")
+          .select()
+          .order("created_at", { ascending: true });
+        if (!error && data) {
+          setMessages(data);
+        }
+      };
+      fetchMessages();
+    }
+  }, [activeTab]); // activeTabが変わるたびにメッセージを再取得
+
+  // メッセージを送信（insert）
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const { error } = await supabase
+      .from("messages")
+      .insert({ text: input })
+      .select();
+    if (!error) {
+      setInput("");
+      // 即時更新用（簡易リロード）
+      // メッセージ送信後もAIタブのメッセージを更新
+      const { data } = await supabase
+        .from("messages")
+        .select()
+        .order("created_at", { ascending: true });
+      setMessages(data ?? []);
+    } else {
+      console.error("送信失敗:", error);
+    }
+  };
+
+  // タブに応じたコンテンツをレンダリングする関数
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "ai":
+        return (
+          <div>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>AI回答</h2>
+            {/* 既存のメッセージ表示部分 */}
+            <div
+              style={{
+                marginBottom: "1rem",
+                height: "300px",
+                overflowY: "auto",
+                border: "1px solid #ccc",
+                padding: "10px",
+              }}
+            >
+              {messages.map((msg) => (
+                <p key={msg.id} style={{ marginBottom: "0.5rem" }}>
+                  💬 {msg.text}
+                </p>
+              ))}
+            </div>
+
+            {/* 既存の入力と送信部分 */}
+            <div style={{ display: "flex" }}>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="AIへのメッセージを入力"
+                style={{
+                  padding: "0.5rem",
+                  marginRight: "0.5rem",
+                  flexGrow: 1,
+                  border: "1px solid #ccc",
+                }}
+              />
+              <button
+                onClick={handleSend}
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                送信
+              </button>
+            </div>
+          </div>
+        );
+      case "external":
+        return (
+          <div>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
+              外部情報
+            </h2>
+            <p>ここにAI回答の補足となる信頼性の高い外部情報が表示されます。</p>
+            {/* 今後、外部検索API連携後にここに表示ロジックを追加 */}
+          </div>
+        );
+      case "community":
+        return (
+          <div>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
+              コミュニティ
+            </h2>
+            <p>ユーザー同士のQ&Aや専門家監修情報が表示されます。</p>
+            {/* 今後、コミュニティ機能実装後にここに表示ロジックを追加 */}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <main
+      style={{
+        padding: "2rem",
+        maxWidth: "800px",
+        margin: "0 auto",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "2rem",
+          marginBottom: "1.5rem",
+          textAlign: "center",
+        }}
+      >
+        多角的学習補助AIチャットアプリ
+      </h1>
+
+      {/* タブ切り替え部分 */}
+      <div
+        style={{
+          display: "flex",
+          borderBottom: "1px solid #ccc",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <button
+          onClick={() => setActiveTab("ai")}
+          style={{
+            padding: "10px 20px",
+            border: "none",
+            backgroundColor: activeTab === "ai" ? "#e0e0e0" : "transparent",
+            cursor: "pointer",
+            fontSize: "1rem",
+            fontWeight: activeTab === "ai" ? "bold" : "normal",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+            marginRight: "5px",
+          }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          AI回答
+        </button>
+        <button
+          onClick={() => setActiveTab("external")}
+          style={{
+            padding: "10px 20px",
+            border: "none",
+            backgroundColor:
+              activeTab === "external" ? "#e0e0e0" : "transparent",
+            cursor: "pointer",
+            fontSize: "1rem",
+            fontWeight: activeTab === "external" ? "bold" : "normal",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+            marginRight: "5px",
+          }}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          外部情報
+        </button>
+        <button
+          onClick={() => setActiveTab("community")}
+          style={{
+            padding: "10px 20px",
+            border: "none",
+            backgroundColor:
+              activeTab === "community" ? "#e0e0e0" : "transparent",
+            cursor: "pointer",
+            fontSize: "1rem",
+            fontWeight: activeTab === "community" ? "bold" : "normal",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+          }}
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          コミュニティ
+        </button>
+      </div>
+
+      {/* タブコンテンツの表示 */}
+      {renderTabContent()}
+    </main>
   );
 }
