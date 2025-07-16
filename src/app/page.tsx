@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-
+import styles from "./page.module.css";
 type Message = {
   id: string;
   text: string;
@@ -63,48 +63,25 @@ export default function Home() {
       case "ai":
         return (
           <div>
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>AI回答</h2>
+            <h2 className={styles.tabContentTitle}>AI回答</h2>
             {/* 既存のメッセージ表示部分 */}
-            <div
-              style={{
-                marginBottom: "1rem",
-                height: "300px",
-                overflowY: "auto",
-                border: "1px solid #ccc",
-                padding: "10px",
-              }}
-            >
+            <div className={styles.messageDisplay}>
               {messages.map((msg) => (
-                <p key={msg.id} style={{ marginBottom: "0.5rem" }}>
+                <p key={msg.id} className={styles.messageItem}>
                   💬 {msg.text}
                 </p>
               ))}
             </div>
 
             {/* 既存の入力と送信部分 */}
-            <div style={{ display: "flex" }}>
+            <div className={styles.inputContainer}>
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="AIへのメッセージを入力"
-                style={{
-                  padding: "0.5rem",
-                  marginRight: "0.5rem",
-                  flexGrow: 1,
-                  border: "1px solid #ccc",
-                }}
+                className={styles.messageInput}
               />
-              <button
-                onClick={handleSend}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
+              <button onClick={handleSend} className={styles.sendButton}>
                 送信
               </button>
             </div>
@@ -113,9 +90,7 @@ export default function Home() {
       case "external":
         return (
           <div>
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
-              外部情報
-            </h2>
+            <h2 className={styles.tabContentTitle}>外部情報</h2>
             <p>ここにAI回答の補足となる信頼性の高い外部情報が表示されます。</p>
             {/* 今後、外部検索API連携後にここに表示ロジックを追加 */}
           </div>
@@ -123,9 +98,7 @@ export default function Home() {
       case "community":
         return (
           <div>
-            <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
-              コミュニティ
-            </h2>
+            <h2 className={styles.tabContentTitle}>コミュニティ</h2>
             <p>ユーザー同士のQ&Aや専門家監修情報が表示されます。</p>
             {/* 今後、コミュニティ機能実装後にここに表示ロジックを追加 */}
           </div>
@@ -136,78 +109,32 @@ export default function Home() {
   };
 
   return (
-    <main
-      style={{
-        padding: "2rem",
-        maxWidth: "800px",
-        margin: "0 auto",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h1
-        style={{
-          fontSize: "2rem",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-        }}
-      >
-        多角的学習補助AIチャットアプリ
-      </h1>
+    <main className={styles.main}>
+      <h1 className={styles.title}>多角的学習補助AIチャットアプリ</h1>
 
       {/* タブ切り替え部分 */}
-      <div
-        style={{
-          display: "flex",
-          borderBottom: "1px solid #ccc",
-          marginBottom: "1.5rem",
-        }}
-      >
+      <div className={styles.tabContainer}>
         <button
           onClick={() => setActiveTab("ai")}
-          style={{
-            padding: "10px 20px",
-            border: "none",
-            backgroundColor: activeTab === "ai" ? "#e0e0e0" : "transparent",
-            cursor: "pointer",
-            fontSize: "1rem",
-            fontWeight: activeTab === "ai" ? "bold" : "normal",
-            borderTopLeftRadius: "8px",
-            borderTopRightRadius: "8px",
-            marginRight: "5px",
-          }}
+          className={`${styles.tabButton} ${
+            activeTab === "ai" ? styles.tabButtonActive : ""
+          }`}
         >
           AI回答
         </button>
         <button
           onClick={() => setActiveTab("external")}
-          style={{
-            padding: "10px 20px",
-            border: "none",
-            backgroundColor:
-              activeTab === "external" ? "#e0e0e0" : "transparent",
-            cursor: "pointer",
-            fontSize: "1rem",
-            fontWeight: activeTab === "external" ? "bold" : "normal",
-            borderTopLeftRadius: "8px",
-            borderTopRightRadius: "8px",
-            marginRight: "5px",
-          }}
+          className={`${styles.tabButton} ${
+            activeTab === "external" ? styles.tabButtonActive : ""
+          }`}
         >
           外部情報
         </button>
         <button
           onClick={() => setActiveTab("community")}
-          style={{
-            padding: "10px 20px",
-            border: "none",
-            backgroundColor:
-              activeTab === "community" ? "#e0e0e0" : "transparent",
-            cursor: "pointer",
-            fontSize: "1rem",
-            fontWeight: activeTab === "community" ? "bold" : "normal",
-            borderTopLeftRadius: "8px",
-            borderTopRightRadius: "8px",
-          }}
+          className={`${styles.tabButton} ${
+            activeTab === "community" ? styles.tabButtonActive : ""
+          }`}
         >
           コミュニティ
         </button>
